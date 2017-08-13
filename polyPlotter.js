@@ -6,18 +6,9 @@
                   /____/
 
     An ExtendScript module to help draw paths in InDesign.
-
-    This module does not draw anything. Instead it constructs
-    a path in memory that can replace the entirePath property
-    of an InDesign Path object:
-
-    > Path.entirePath = PolyPlotter.getEntirePath()
-
-    I mainly wrote this module as drawing paths in InDesign is slow.
-    Constructing the entire path in memory first and replacing all
-    points of the entirePath property is the quickest way to draw a
-    complex polygon onto the page.
-
+    
+    Version 0.6
+    
     Bruno Herfst 2017
 
     MIT license (MIT)
@@ -31,22 +22,15 @@ var polyPlot = function( options ) {
     // ref to self
     var P = this;
     
-    // paths holder
-    var entirePath = [];
-
     // curent position
     var currX = currY = 0;
-
-    // New plotter path holder
-    var newPath = [];
     
-    var pathType = PathType.CLOSED_PATH;
+    var pathsHolder = [];
     
-    // Scale and position
-    // Used when returning the entire path
+    // Used when drawing paths
     var scale  = 100;    // Percentage
     var offset = [0, 0]; // X,Y
-    
+
     function transformPath( pathArray ) {
         var arr = pathArray.slice(0);
         var len = arr.length;
@@ -66,14 +50,27 @@ var polyPlot = function( options ) {
         return arr;
     }
     
+    function transformAll( pathsHolder ) {
+        var transformedPaths = pathsHolder.slice(0);
+        var len = transformedPaths.length;
+        for (var p = 0; p < len; p++) {
+            transformedPaths[p].path = transformPath( transformedPaths[p].path );
+        }
+        return transformedPaths;
+    }
+    
     function drawPath( page, paths ) {
-        var newShape = page.rectangles.add();
         var pl = paths.length;
-        
-        //newShape.paths[0].entirePath = paths[0];
+        var pathType;
+        var newShape = page.rectangles.add();
         for (var p = 0; p < pl; p++) {
+            if( paths[p].open ) {
+                pathType = PathType.OPEN_PATH;
+            } else {
+                pathType = PathType.CLOSED_PATH;
+            }
             var s = newShape.paths.add();
-            s.entirePath = paths[p];
+            s.entirePath = paths[p].path;
             s.pathType   = pathType;
         }
         newShape.paths[0].remove();
@@ -88,60 +85,95 @@ var polyPlot = function( options ) {
     P.drawScale = function ( scalePercent ) {
         scale = parseFloat( scalePercent );
     }
-    
-    P.drawOpenPaths = function () {
-        pathType = PathType.OPEN_PATH;
-    }
-    
-    P.drawClosedPaths = function () {
-        pathType = PathType.CLOSED_PATH;
-    }
 
 // Plot functions
 // -------------
+    
+    function updateCurr( x, y ) {
+        currX = parseFloat( x );
+        currY = parseFloat( y );
+    }
+
+    // New path object    
+    function plotpath( path, open ) {
+        var pp = this;
+        pp.path = path || [];
+        pp.open = (open==null || open); // Standard true
+        // Is the first point already drawn
+        pp.startPoint = false;
+        pp.add = function ( points ) {
+            pp.path.push( points );
+            pp.startPoint = true;
+        }
+    }
+
+    // New plotter path holder
+    var currPath = new plotpath();
 
     // start a new path
     P.newPath = function() {
-        if( newPath.length > 0) {
-            entirePath.push( newPath );
+        if( currPath.path.length > 0) {
+            pathsHolder.push( currPath );
         }
-        newPath = [];
+        currPath = new plotpath();
+    }
+
+    // Move to new location
+    P.moveTo = function ( x, y ) {
+        currPath.startPoint = false;
+        updateCurr( x, y );
     }
 
     P.lineTo = function ( x, y ) {
-        newPath.push( [parseFloat( x ), parseFloat( y )] );
+        if(!currPath.startPoint) {
+            currPath.add( [currX, currY] );
+        }
+        currPath.add( [parseFloat( x ), parseFloat( y )] );
+        updateCurr( x, y );
     }
 
-    P.curveTo = function ( inx, iny, x, y, outy, outx ) {
-        newPath.push( [[parseFloat(inx), parseFloat(iny)],[parseFloat(x), parseFloat(y)],[parseFloat(outx), parseFloat(outy)]] );
+    P.curveTo = function (  outx, outy, inx, iny, x, y) {
+        if(!currPath.startPoint) {
+            currPath.add( [currX, currY] );
+        }
+        var lastPoint = currPath.path[currPath.path.length-1];
+        if( lastPoint[0].constructor === Array ) {
+            // Curve point
+            lastPoint[2] = [parseFloat(outx), parseFloat(outy)];
+        } else {
+            // Normal point // Convert to curve point
+            currPath.path[currPath.path.length-1] = [ [lastPoint[0],lastPoint[1]],[lastPoint[0],lastPoint[1]],[parseFloat(outx), parseFloat(outy)] ]
+        }
+        currPath.add( [[parseFloat(inx), parseFloat(iny)],[parseFloat(x), parseFloat(y)],[parseFloat(x), parseFloat(y)]] );
     }
 
     // close a path
     P.closePath = function() {
-      P.newPath();
+        currPath.open = false;
+        P.newPath();
     }
 
 // Adding points
 // -------------
     P.addRect = function ( x, y, w, h) {
-      // Adds a rectangle
-      entirePath.push([ [x,y],[x+w,y],[x+w,y+h],[x,y+h] ]);
+        // Adds a rectangle
+        pathsHolder.push( new plotpath( [ [x,y],[x+w,y],[x+w,y+h],[x,y+h] ], false) );
     }
 
     P.addOval = function ( x, y, w, h) {
-      // Adds an oval
-      var hw = w * 0.5; // Half width
-      var hh = h * 0.5; // Half height
-      var magic = 0.5522848;
-      var mx = x + hw;  // Mid X
-      var my = y + hh;  // Mid Y
-      var qh = hh * magic;
-      var qw = hw * magic;
-    
-      entirePath.push([ [ [mx-qw , y    ], [mx  , y  ], [mx+qw , y    ] ],
-                        [ [x+w   , my-qh], [x+w , my ], [x+w   , my+qh] ],
-                        [ [mx+qw , y+h  ], [mx  , y+h], [mx-qw , y+h  ] ],
-                        [ [x     , my+qh], [x   , my ], [x     , my-qh] ]]);        
+        // Adds an oval
+        var hw = w * 0.5; // Half width
+        var hh = h * 0.5; // Half height
+        var magic = 0.5522848;
+        var mx = x + hw;  // Mid X
+        var my = y + hh;  // Mid Y
+        var qh = hh * magic;
+        var qw = hw * magic;
+        
+        pathsHolder.push( new plotpath( [ [ [mx-qw , y    ], [mx  , y  ], [mx+qw , y    ] ],
+                                        [ [x+w   , my-qh], [x+w , my ], [x+w   , my+qh] ],
+                                        [ [mx+qw , y+h  ], [mx  , y+h], [mx-qw , y+h  ] ],
+                                        [ [x     , my+qh], [x   , my ], [x     , my-qh] ]], false) );
     }
 
 // Get functions
@@ -151,11 +183,12 @@ var polyPlot = function( options ) {
         return [currX, currY];
     }
 
-    P.getEntirePath = function( options ) {
-        return transformPath( entirePath );
+    P.getPaths = function( options ) {
+        return transformAll( pathsHolder );
     }
 
     P.drawToPage = function( page, options ) {
+        P.newPath();
         if( options ) {
             if(options.hasOwnProperty('scale')) {
                 scale = parseInt(options.scale);
@@ -168,8 +201,8 @@ var polyPlot = function( options ) {
             }
         }
         
-        if( entirePath.length > 0) {
-            drawPath( page, transformPath( entirePath ) );
+        if( pathsHolder.length > 0) {
+            drawPath( page, transformAll( pathsHolder ) );
         } else {
             alert("No paths to draw, did you close the path?")
         }

@@ -14,13 +14,13 @@ function main() {
 
     var P = new polyPlot();
 
-    P.lineTo( 10, 10 );
+    P.moveTo( 10, 10 );
     P.lineTo( 10, 20 );
     P.lineTo( 20, 20 );  
     P.lineTo( 20, 10 );
     P.closePath();
 
-    P.lineTo( 12, 12 );    
+    P.moveTo( 12, 12 );    
     P.lineTo( 18, 12 ); 
     P.lineTo( 18, 18 );
     P.lineTo( 12, 18 );
