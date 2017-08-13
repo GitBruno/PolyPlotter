@@ -12,14 +12,14 @@ try {
 
 function main() {
 
-    var P = new polyPlot();
+    var P = new polyPlotter();
 
     P.moveTo( 10, 10 );
     P.lineTo( 10, 20 );
     P.lineTo( 20, 20 );  
     P.lineTo( 20, 10 );
     P.closePath();
-
+    
     P.moveTo( 12, 12 );    
     P.lineTo( 18, 12 ); 
     P.lineTo( 18, 18 );

@@ -18,7 +18,7 @@
 
 #target indesign
 
-var polyPlot = function( options ) {
+var polyPlotter = function( options ) {
     // ref to self
     var P = this;
     
@@ -95,7 +95,7 @@ var polyPlot = function( options ) {
     }
 
     // New path object    
-    function plotpath( path, open ) {
+    function plotPath( path, open ) {
         var pp = this;
         pp.path = path || [];
         pp.open = (open==null || open); // Standard true
@@ -108,14 +108,14 @@ var polyPlot = function( options ) {
     }
 
     // New plotter path holder
-    var currPath = new plotpath();
+    var currPath = new plotPath();
 
     // start a new path
     P.newPath = function() {
         if( currPath.path.length > 0) {
             pathsHolder.push( currPath );
         }
-        currPath = new plotpath();
+        currPath = new plotPath();
     }
 
     // Move to new location
@@ -152,12 +152,20 @@ var polyPlot = function( options ) {
         currPath.open = false;
         P.newPath();
     }
+    
+    P.clear = function () {
+        // New Drawing
+        // Clears old data
+        // Reset
+        currPath = new plotPath();
+        pathsHolder = [];
+    }
 
 // Adding points
 // -------------
     P.addRect = function ( x, y, w, h) {
         // Adds a rectangle
-        pathsHolder.push( new plotpath( [ [x,y],[x+w,y],[x+w,y+h],[x,y+h] ], false) );
+        pathsHolder.push( new plotPath( [ [x,y],[x+w,y],[x+w,y+h],[x,y+h] ], false) );
     }
 
     P.addOval = function ( x, y, w, h) {
@@ -170,7 +178,7 @@ var polyPlot = function( options ) {
         var qh = hh * magic;
         var qw = hw * magic;
         
-        pathsHolder.push( new plotpath( [ [ [mx-qw , y    ], [mx  , y  ], [mx+qw , y    ] ],
+        pathsHolder.push( new plotPath( [ [ [mx-qw , y    ], [mx  , y  ], [mx+qw , y    ] ],
                                         [ [x+w   , my-qh], [x+w , my ], [x+w   , my+qh] ],
                                         [ [mx+qw , y+h  ], [mx  , y+h], [mx-qw , y+h  ] ],
                                         [ [x     , my+qh], [x   , my ], [x     , my-qh] ]], false) );

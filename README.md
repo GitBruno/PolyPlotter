@@ -8,7 +8,7 @@ You can import this module using the preprocessor directive:
 
 To start a drawing create a new plotter object with:
 
-    var P = new polyPlot();
+    var P = new polyPlotter();
 
 ## Plotting
 I mainly wrote this module as drawing paths in InDesign is slow. Constructing the entire path virtually before drawing anchors in the document is the quickest way to draw polygons onto the page. To construct a square of 10 units do:
