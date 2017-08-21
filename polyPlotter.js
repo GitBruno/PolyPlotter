@@ -31,8 +31,8 @@ var polyPlotter = function( options ) {
     var scale  = 100;    // Percentage
     var offset = [0, 0]; // X,Y
 
-    function transformPath( pathArray ) {
-        var arr = pathArray.slice(0);
+    function transformNumberArr( numArr, scale, offset ) {
+        var arr = numArr.slice(0);
         var len = arr.length;
         if( len < 1 ) {
             // Array is empty
@@ -40,7 +40,7 @@ var polyPlotter = function( options ) {
         }
         if( arr[0].constructor === Array ) {
             for (var i = 0; i < len; i++) {
-                arr[i] = transformPath(arr[i]);
+                arr[i] = transformNumberArr(arr[i], scale, offset);
             }
         } else { // arr is point
             // Transform
@@ -49,7 +49,11 @@ var polyPlotter = function( options ) {
         }
         return arr;
     }
-    
+
+    function transformPath( pathArray ) {
+        return transformNumberArr( pathArray, scale, offset );
+    }
+
     function transformAll( pathsHolder ) {
         var transformedPaths = pathsHolder.slice(0);
         var len = transformedPaths.length;
@@ -109,6 +113,49 @@ var polyPlotter = function( options ) {
 
     // New plotter path holder
     var currPath = new plotPath();
+
+    // Copy given path
+    P.copyShape = function( shape, options ) {
+        var myOffset = [0,0]; // X, Y Offset
+        var myScale  = 100;  // Percent
+        var resetBounds = false;
+
+        if( currPath.path.length > 0) {
+            pathsHolder.push( currPath );
+        }
+        currPath = new plotPath();
+
+        if( options ) {
+            if(options.hasOwnProperty('scale')) {
+                myScale = parseFloat(options.scale);
+            }
+            if(options.hasOwnProperty('offset')) {
+                myOffset = [parseFloat(options.offset[0]),parseFloat(options.offset[1])];
+            }
+            if(options.hasOwnProperty('resetBounds')) {
+                resetBounds = Boolean( options.resetBounds );
+            }
+        }
+
+        if(resetBounds) {
+            // Get shape offset
+            var sBounds = shape.geometricBounds;
+            myOffset[0] += -sBounds[1];
+            myOffset[1] += -sBounds[0];
+        }
+
+        var pathLen = shape.paths.length;
+        
+        for(var p = 0; p < pathLen; p++){
+            currPath.path = transformNumberArr( shape.paths[p].entirePath, myScale, myOffset );
+            currPath.open = false;
+            if( shape.paths[p].pathType == PathType.OPEN_PATH ) {
+                currPath.open = true;
+            }
+            pathsHolder.push( currPath );
+            currPath = new plotPath();
+        }
+    }
 
     // start a new path
     P.newPath = function() {
