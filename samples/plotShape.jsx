@@ -43,5 +43,5 @@ function main() {
     // Circle
     P.addOval( 40, y, 10, 10 );
     
-    P.drawToPage( doc.pages[0], {x: 10, y: 10, scale: 100} );
+    P.drawToPage( doc.pages[0], {x: 10, y: 10, scale: 100, style:"[Basic Graphics Frame]"} );
 }

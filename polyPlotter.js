@@ -30,7 +30,9 @@ var polyPlotter = function( options ) {
     // Used when drawing paths
     var scale  = 100;    // Percentage
     var offset = [0, 0]; // X,Y
-
+	
+	var objectStyleName = "";
+	
     function transformNumberArr( numArr, scale, offset ) {
         var arr = numArr.slice(0);
         var len = arr.length;
@@ -67,6 +69,12 @@ var polyPlotter = function( options ) {
         var pl = paths.length;
         var pathType;
         var newShape = page.rectangles.add();
+        try {
+        	newShape.appliedObjectStyle = page.parent.parent.objectStyles.itemByName( objectStyleName ); 
+        } catch ( err ) {
+        	newShape.appliedObjectStyle = page.parent.parent.objectStyles.item(0); 
+        }
+        
         for (var p = 0; p < pl; p++) {
             if( paths[p].open ) {
                 pathType = PathType.OPEN_PATH;
@@ -88,6 +96,10 @@ var polyPlotter = function( options ) {
     
     P.drawScale = function ( scalePercent ) {
         scale = parseFloat( scalePercent );
+    }
+    
+    P.setStyle = function ( styleName ) {
+        objectStyleName = String( styleName );
     }
 
 // Plot functions
@@ -134,6 +146,11 @@ var polyPlotter = function( options ) {
             }
             if(options.hasOwnProperty('resetBounds')) {
                 resetBounds = Boolean( options.resetBounds );
+            }
+            if(!options.hasOwnProperty('ignoreStyle') ) {
+                if(!Boolean( options.ignoreStyle )) {
+                    objectStyleName = shape.appliedObjectStyle.name;
+                }
             }
         }
 
@@ -254,8 +271,11 @@ var polyPlotter = function( options ) {
             if(options.hasOwnProperty('y')) {
                 offset[1] = parseFloat( options.y );
             }
+            if(options.hasOwnProperty('style')) {
+                objectStyleName = String( options.style );
+            }
         }
-        
+
         if( pathsHolder.length > 0) {
             drawPath( page, transformAll( pathsHolder ) );
         } else {
