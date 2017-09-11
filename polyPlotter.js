@@ -70,7 +70,7 @@ var polyPlotter = function( options ) {
         var pathType;
         var newShape = page.rectangles.add();
         try {
-        	newShape.appliedObjectStyle = page.parent.parent.objectStyles.itemByName( objectStyleName ); 
+        	newShape.appliedObjectStyle = page.parent.parent.objectStyles.itemByName( objectStyleName, true ); 
         } catch ( err ) {
         	newShape.appliedObjectStyle = page.parent.parent.objectStyles.item(0); 
         }
