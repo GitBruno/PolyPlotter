@@ -72,7 +72,7 @@ var polyPlotter = function( options ) {
         try {
         	newShape.appliedObjectStyle = page.parent.parent.objectStyles.itemByName( objectStyleName, true ); 
         } catch ( err ) {
-        	newShape.appliedObjectStyle = page.parent.parent.objectStyles.item(0); 
+        	newShape.appliedObjectStyle = page.parent.parent.objectStyles[0]; 
         }
         
         for (var p = 0; p < pl; p++) {

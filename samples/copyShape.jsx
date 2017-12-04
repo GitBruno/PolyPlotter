@@ -44,5 +44,5 @@ function main() {
     var P = new polyPlotter();
 
     P.copyShape( selectedShapes[0], { resetBounds: true });
-    P.drawToPage( doc.pages[0], {x: 0, y: 0, scale: 100} );
+    P.drawToPage( selectedShapes[0].parentPage, {x: 0, y: 0, scale: 100} );
 }
