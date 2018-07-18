@@ -20,11 +20,14 @@ I mainly wrote this module as drawing paths in InDesign is slow. Constructing th
     P.lineTo( 10, 20 )
     P.closePath()
 
-Or even better, use primitives:
+Instead of the square above we can use a primitive instead:
 	
     P.addRect( 10, 10, 10, 10 );
 
-For a complete set of commands please [review the wiki](http://github.com/GitBruno/PolyPlotter/wiki)
+We can also copy existing paths:
+
+    P.copyShape( pageItem, { resetBounds: true });
+    P.drawToPage( pageItem.parentPage, {x: 0, y: 0, scale: 100} );
 
 ## Drawing to the page
 The easiest method to draw the virtual path into your document, is by using the `drawToPage()` method:
